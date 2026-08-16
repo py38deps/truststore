@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import os
 import platform
@@ -27,8 +29,20 @@ if typing.TYPE_CHECKING:
     from typing_extensions import Buffer
 
 # From typeshed/stdlib/ssl.pyi
-_StrOrBytesPath: typing.TypeAlias = str | bytes | os.PathLike[str] | os.PathLike[bytes]
-_PasswordType: typing.TypeAlias = str | bytes | typing.Callable[[], str | bytes]
+# ``typing.TypeAlias`` and the ``X | Y`` union syntax require Python 3.10,
+# use typing.Union for Python < 3.10 compatibility.
+if sys.version_info >= (3, 10):
+    _StrOrBytesPath: typing.TypeAlias = (
+        str | bytes | os.PathLike[str] | os.PathLike[bytes]
+    )
+    _PasswordType: typing.TypeAlias = str | bytes | typing.Callable[[], str | bytes]
+else:
+    _StrOrBytesPath: typing.TypeAlias = typing.Union[
+        str, bytes, os.PathLike, os.PathLike
+    ]
+    _PasswordType: typing.TypeAlias = typing.Union[
+        str, bytes, typing.Callable[[], typing.Union[str, bytes]]
+    ]
 
 
 def inject_into_ssl() -> None:
@@ -155,7 +169,7 @@ class SSLContext(_truststore_SSLContext_super_class):  # type: ignore[misc]
         self,
         cafile: str | bytes | os.PathLike[str] | os.PathLike[bytes] | None = None,
         capath: str | bytes | os.PathLike[str] | os.PathLike[bytes] | None = None,
-        cadata: typing.Union[str, "Buffer", None] = None,
+        cadata: str | Buffer | None = None,
     ) -> None:
         return self._ctx.load_verify_locations(
             cafile=cafile, capath=capath, cadata=cadata
@@ -335,7 +349,15 @@ def _verify_peercerts(
     except AttributeError:
         pass
 
-    cert_bytes = _get_unverified_chain_bytes(sslobj)
+    if hasattr(sslobj, "get_unverified_chain"):
+        cert_bytes = _get_unverified_chain_bytes(sslobj)
+    else:
+        # Python < 3.10 doesn't expose get_unverified_chain() to Python,
+        # so we can only retrieve the leaf certificate from the peer.
+        # The OS trust store is then responsible for building the rest
+        # of the certificate chain during verification.
+        leaf_cert = sock_or_sslobj.getpeercert(binary_form=True)
+        cert_bytes = [leaf_cert] if leaf_cert is not None else []
     _verify_peercerts_impl(
         sock_or_sslobj.context, cert_bytes, server_hostname=server_hostname
     )

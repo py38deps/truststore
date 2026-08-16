@@ -1,4 +1,3 @@
-import asyncio
 import socket
 import ssl
 import threading
@@ -6,6 +5,7 @@ import threading
 import pytest
 
 import truststore
+from tests.conftest import to_thread
 
 
 def wrap_and_close_sockets(ctx: truststore.SSLContext, host: str, port: int) -> None:
@@ -34,5 +34,5 @@ async def test_threading(server):
         for t in threads:
             t.join()
 
-    thread = asyncio.to_thread(run_threads)
+    thread = to_thread(run_threads)
     await thread

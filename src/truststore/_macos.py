@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import contextlib
 import ctypes
 import platform
 import ssl
+import sys
 import typing
 from ctypes import (
     CDLL,
@@ -451,6 +454,23 @@ def _verify_peercerts_impl(
 
         # We always want system certificates.
         Security.SecTrustSetAnchorCertificatesOnly(trust, False)
+
+        if sys.version_info < (3, 10):
+            # Python < 3.10 doesn't expose the peer certificate chain API,
+            # so we can only pass the leaf certificate to SecTrust. Allow
+            # SecTrust to fetch missing intermediate certificates over the
+            # network when building the chain from the leaf alone, matching
+            # the behavior of Python >= 3.10 which verifies the full
+            # server-sent chain.
+            try:
+                Security.SecTrustSetNetworkFetchAllowed.argtypes = [
+                    SecTrustRef,
+                    Boolean,
+                ]
+                Security.SecTrustSetNetworkFetchAllowed(trust, True)
+            except AttributeError:
+                # SecTrustSetNetworkFetchAllowed() is macOS 10.9+.
+                pass
 
         # macOS 10.13 and earlier don't support SecTrustEvaluateWithError()
         # so we use SecTrustEvaluate() which means we need to construct error

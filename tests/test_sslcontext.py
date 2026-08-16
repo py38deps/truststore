@@ -49,9 +49,7 @@ def test_verify_mode_cert_none():
     assert ctx.check_hostname is False
     assert ctx.verify_mode == ssl.CERT_NONE
 
-    with (
-        urllib3.PoolManager(ssl_context=ctx) as http,
-        pytest.warns(InsecureRequestWarning) as w,
-    ):
-        http.request("GET", "https://expired.badssl.com/")
+    with urllib3.PoolManager(ssl_context=ctx) as http:
+        with pytest.warns(InsecureRequestWarning) as w:
+            http.request("GET", "https://expired.badssl.com/")
     assert len(w) == 1

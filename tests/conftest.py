@@ -2,6 +2,7 @@ import asyncio
 import logging
 import pathlib
 import ssl
+import sys
 import typing
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
@@ -9,6 +10,17 @@ from tempfile import TemporaryDirectory
 import pytest
 import pytest_asyncio
 from aiohttp import web
+
+if sys.version_info >= (3, 9):
+    to_thread = asyncio.to_thread
+else:
+
+    async def to_thread(func, *args, **kwargs):
+        # asyncio.to_thread() was added in Python 3.9,
+        # fall back to run_in_executor() for Python 3.8.
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
+
 
 MKCERT_CA_NOT_INSTALLED = b"local CA is not installed in the system trust store"
 MKCERT_CA_ALREADY_INSTALLED = b"local CA is now installed in the system trust store"

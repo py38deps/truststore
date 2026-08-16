@@ -8,7 +8,7 @@ import pytest
 import urllib3
 
 import truststore
-from tests.conftest import Server, successful_hosts
+from tests.conftest import Server, successful_hosts, to_thread
 
 
 @pytest.fixture(scope="function")
@@ -85,7 +85,7 @@ async def test_urllib3_works_with_inject(server: Server) -> None:
             resp = client.request("GET", server.base_url)
         assert resp.status == 200
 
-    thread = asyncio.to_thread(test_urllib3)
+    thread = to_thread(test_urllib3)
     await thread
 
 
@@ -119,7 +119,7 @@ async def test_sync_httpx_works_with_inject(server: Server) -> None:
             resp = client.request("GET", server.base_url)
             assert resp.status_code == 200
 
-    thread = asyncio.to_thread(test_httpx)
+    thread = to_thread(test_httpx)
     await thread
 
 

@@ -15,7 +15,7 @@ have many helpful features compared to a static certificate bundle like certifi:
 - PyPI is no longer a CA distribution channel 🥳
 
 Right now truststore is a stand-alone library that can be installed globally in your
-application to immediately take advantage of the benefits in Python 3.10+. Truststore
+application to immediately take advantage of the benefits in Python 3.8+. Truststore
 has also been integrated into pip 24.2+ as the default method for verifying HTTPS
 certificates (with a fallback to certifi).
 
@@ -29,10 +29,15 @@ Truststore is installed from [PyPI](https://pypi.org/project/truststore) with pi
 $ python -m pip install truststore
 ```
 
-Truststore **requires Python 3.10 or later** and supports the following platforms:
+Truststore **requires Python 3.8 or later** and supports the following platforms:
 - macOS 10.8+ via [Security framework](https://developer.apple.com/documentation/security)
 - Windows via [CryptoAPI](https://docs.microsoft.com/en-us/windows/win32/seccrypto/cryptography-functions#certificate-verification-functions)
 - Linux via OpenSSL
+
+On Python 3.8 and 3.9 the peer certificate chain API isn't available, so the leaf
+certificate is verified against the OS trust store and the OS builds the rest of the
+chain (instead of using the chain sent by the server). On macOS this includes fetching
+missing intermediate certificates over the network (macOS 10.9+).
 
 ## User Guide
 

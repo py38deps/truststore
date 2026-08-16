@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib
 import os
 import platform
@@ -256,18 +258,16 @@ def test_success_after_loading_additional_anchors(host, trustme_ca):
 
 @failure_hosts
 def test_failure_after_loading_additional_anchors(failure, trustme_ca):
-    with (
-        pytest.raises(ssl.SSLCertVerificationError) as e,
-        socket.create_connection((failure.host, 443)) as sock,
-    ):
-        ctx = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        if platform.system() != "Linux":
-            ctx.verify_flags |= ssl.VERIFY_CRL_CHECK_CHAIN
+    with socket.create_connection((failure.host, 443)) as sock:
+        with pytest.raises(ssl.SSLCertVerificationError) as e:
+            ctx = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            if platform.system() != "Linux":
+                ctx.verify_flags |= ssl.VERIFY_CRL_CHECK_CHAIN
 
-        # See if loading additional anchors still fails.
-        trustme_ca.configure_trust(ctx)
-        with ctx.wrap_socket(sock, server_hostname=failure.host):
-            pass
+            # See if loading additional anchors still fails.
+            trustme_ca.configure_trust(ctx)
+            with ctx.wrap_socket(sock, server_hostname=failure.host):
+                pass
 
     error_repr = repr(e.value)
     assert any(message in error_repr for message in failure.error_messages), error_repr

@@ -1,4 +1,3 @@
-import asyncio
 import ssl
 
 import pytest
@@ -8,7 +7,7 @@ from aiohttp import ClientSession
 
 import truststore
 from tests import SSLContextAdapter
-from tests.conftest import Server
+from tests.conftest import Server, to_thread
 
 
 @pytest.mark.asyncio
@@ -19,7 +18,7 @@ async def test_urllib3_custom_ca(server: Server) -> None:
             resp = client.request("GET", server.base_url)
         assert resp.status == 200
 
-    thread = asyncio.to_thread(test_urllib3)
+    thread = to_thread(test_urllib3)
     await thread
 
 
@@ -40,5 +39,5 @@ async def test_requests_custom_ca(server: Server) -> None:
             resp = http.request("GET", server.base_url)
         assert resp.status_code == 200
 
-    thread = asyncio.to_thread(test_requests)
+    thread = to_thread(test_requests)
     await thread
