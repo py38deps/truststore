@@ -556,7 +556,15 @@ def _verify_peercerts_impl_macos_10_14(
         # If the error is a known failure that we're
         # explicitly okay with from SSLContext configuration
         # we can set is_trusted accordingly.
-        if ssl_context.verify_mode != ssl.CERT_REQUIRED and (
+        if ssl_context.verify_mode == ssl.CERT_NONE:
+            # CERT_NONE disables certificate verification entirely, so
+            # tolerate any SecTrust failure. Python < 3.10 only passes the
+            # leaf certificate to SecTrust (which fetches the missing chain
+            # over the network), which can surface different error codes than
+            # the full chain (e.g. for expired intermediates), so a fixed
+            # allow-list is not reliable here.
+            is_trusted = True
+        elif ssl_context.verify_mode != ssl.CERT_REQUIRED and (
             cf_error_code == CFConst.errSecNotTrusted
             or cf_error_code == CFConst.errSecCertificateExpired
         ):

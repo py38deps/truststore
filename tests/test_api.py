@@ -64,6 +64,8 @@ failure_hosts_list = [
             "certificate has expired",
             # macOS
             "“*.badssl.com” certificate is expired",
+            # macOS < 3.10 (leaf-only chain, SecTrust fetches intermediates)
+            "“*.badssl.com” certificate is not trusted",
             # macOS with revocation checks
             "certificates do not meet pinning requirements",
             # macOS 10.13
@@ -102,6 +104,8 @@ failure_hosts_list = [
             "self signed certificate in certificate chain",
             # macOS
             "“BadSSL Untrusted Root Certificate Authority” certificate is not trusted",
+            # macOS < 3.10 (leaf-only chain, SecTrust fetches intermediates)
+            "“*.badssl.com” certificate is not trusted",
             # macOS with revocation checks
             "certificates do not meet pinning requirements",
             # macOS 10.13

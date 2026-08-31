@@ -9,5 +9,10 @@ flaky
 httpx
 trustme
 
+# Last version without the Python 3.8 deprecation warning
+cryptography<44 ; python_version < "3.9"
+# Last version with PyPy 3.10 wheels (PyO3 >= 0.29 requires PyPy >= 3.11)
+cryptography<46 ; platform_python_implementation == "PyPy"
+
 # Temporary stop-gap until cffi supports 3.13
 cffi @ https://github.com/python-cffi/cffi/archive/refs/heads/main.zip; python_version > "3.12"
