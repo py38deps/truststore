@@ -1,10 +1,10 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import contextlib
 import ssl
 import typing
-from ctypes import WinDLL  # type: ignore
-from ctypes import WinError  # type: ignore
+from ctypes import WinDLL  # type: ignore[attr-defined]
+from ctypes import WinError  # type: ignore[attr-defined]
 from ctypes import (
     POINTER,
     Structure,
