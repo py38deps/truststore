@@ -114,6 +114,10 @@ class SSLContext(_truststore_SSLContext_super_class):  # type: ignore[misc]
                     return ret
 
         class TruststoreSSLSocket(ssl.SSLSocket):
+            # Set once a handshake completed so that wrap_socket() can tell
+            # whether the handshake it triggered has finished.
+            _truststore_handshake_completed = False
+
             # Handles do_handshake_on_connect=False, explicit do_handshake()
             # calls, and the handshake that SSLSocket.connect() triggers.
             # Must never be called inside _configure_context(). wrap_socket()
@@ -121,6 +125,7 @@ class SSLContext(_truststore_SSLContext_super_class):  # type: ignore[misc]
             def do_handshake(self, block: bool = False) -> None:
                 with ctx_lock:
                     ret = super().do_handshake(block)
+                    self._truststore_handshake_completed = True
                     try:
                         _verify_peercerts(self, server_hostname=self.server_hostname)
                     except Exception:
@@ -157,13 +162,13 @@ class SSLContext(_truststore_SSLContext_super_class):  # type: ignore[misc]
             # NOTE: Below is still inside ctx_lock but not
             # inside the _configure_context().
 
-            # Indicates that a handshake completed and
-            # we can verify now, otherwise verification
+            # Indicates that a handshake completed during wrap_socket() and
+            # we can verify now with the real context, otherwise verification
             # will happen in TruststoreSSLSocket.do_handshake().
-            # PyPy's _ssl returns OpenSSL's "unknown" version string before the
-            # handshake completes while CPython returns None, so treat both as
-            # "no handshake yet" to avoid verifying an empty certificate chain.
-            if ssl_sock.version() not in (None, "unknown"):
+            # ssl.SSLSocket.version() can't be used for this: implementations
+            # disagree about its value before the handshake completes (CPython
+            # returns None, PyPy returns OpenSSL's "unknown" sentinel).
+            if getattr(ssl_sock, "_truststore_handshake_completed", False):
                 try:
                     _verify_peercerts(ssl_sock, server_hostname=server_hostname)
                 except Exception:
