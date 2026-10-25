@@ -159,8 +159,11 @@ class SSLContext(_truststore_SSLContext_super_class):  # type: ignore[misc]
 
             # Indicates that a handshake completed and
             # we can verify now, otherwise verification
-            # will happen in TruststoreSSLSocket.do_handshake()
-            if ssl_sock.version() is not None:
+            # will happen in TruststoreSSLSocket.do_handshake().
+            # PyPy's _ssl returns OpenSSL's "unknown" version string before the
+            # handshake completes while CPython returns None, so treat both as
+            # "no handshake yet" to avoid verifying an empty certificate chain.
+            if ssl_sock.version() not in (None, "unknown"):
                 try:
                     _verify_peercerts(ssl_sock, server_hostname=server_hostname)
                 except Exception:
